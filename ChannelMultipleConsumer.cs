@@ -35,10 +35,19 @@ public class Consumer
 
     public async Task ConsumeAsync()
     {
-        await foreach (var item in _reader.ReadAllAsync())
+        while (await _reader.WaitToReadAsync())
         {
-            await Task.Run(() => ProcessItem(item));
+            if (_reader.TryRead(out var item))
+            {
+                // Call your synchronous method here
+                await Task.Run(() => ProcessItem(item));
+            }
         }
+
+        //await foreach (var item in _reader.ReadAllAsync())
+        //{
+        //    await Task.Run(() => ProcessItem(item));
+        //}
     }
 
     private void ProcessItem(int item)

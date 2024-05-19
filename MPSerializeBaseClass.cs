@@ -54,7 +54,7 @@ public class BaseClassCollection : Dictionary<string, BaseClass>
 }
 
 
-public class BaseClassFormatter<T> : IMessagePackFormatter<T>
+public class AbstractClassFormatter<T> : IMessagePackFormatter<T>
 {
 
     public T Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
@@ -169,7 +169,7 @@ public class MPBaseEntrypoint
 
         var options = MessagePackSerializerOptions.Standard.WithResolver(CompositeResolver.Create(new IMessagePackFormatter[]
         {
-            new BaseClassFormatter<BaseClass>(),
+            new AbstractClassFormatter<BaseClass>(),
             new BaseClassCollectionFormatter()
         }, new[] { StandardResolver.Instance }));
 
@@ -223,9 +223,10 @@ public class MPBaseEntrypoint
 
         var options = MessagePackSerializerOptions.Standard.WithResolver(CompositeResolver.Create(new IMessagePackFormatter[]
         {
-            new BaseClassFormatter<BaseClass>(),
+            new AbstractClassFormatter<BaseClass>(),
             new BaseClassCollectionFormatter()
-        }, new[] { StandardResolver.Instance }));
+        }, new[] { StandardResolver.Instance })).WithCompression(MessagePackCompression.Lz4BlockArray);
+
 
         var data = MessagePackData.FromObject(dictionary, options);
         var deserialized = data.ToObject<Dictionary<int, BaseClassCollection>>(options);

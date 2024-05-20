@@ -86,11 +86,11 @@ public class AbstractClassFormatter<T> : IMessagePackFormatter<T>
     public T Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
     {
         var dictionary = options.Resolver.GetFormatterWithVerify<Dictionary<string, object>>().Deserialize(ref reader, options);
-
+        
         var type = Type.GetType((string)dictionary["Type"]);
         //var instance = Activator.CreateInstance(type, dictionary["Name"]);
         var instance = RuntimeHelpers.GetUninitializedObject(type);
-
+        
         foreach (var prop in type.GetProperties(BindingFlags.Public|BindingFlags.NonPublic | BindingFlags.Instance).Where(p => p.CanWrite))
         {
             if (dictionary.ContainsKey(prop.Name))
@@ -433,9 +433,11 @@ public class MPBaseEntrypoint
         
            
         }, new[] { StandardResolver.Instance })).WithCompression(MessagePackCompression.Lz4BlockArray);
+        var composerDict = new Dictionary<short, Composer>() {
+            { 1, composer }
+        };
 
-
-        var data = MessagePackData.FromObject(composer, options);
-        var deserialized = data.ToObject<Composer>(options);
+        var data = MessagePackData.FromObject(composerDict, options);
+        var deserialized = data.ToObject<Dictionary<short, Composer>>(options);
     }
 }

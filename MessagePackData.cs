@@ -125,6 +125,7 @@ public class MessagePackData
 
         var sequence = new ReadOnlySequence<byte>(_data);
         var reader = new MessagePackReader(sequence);
+        Console.WriteLine($"Type ------{typeof(T).Name}");
         return options.Resolver.GetFormatterWithVerify<T>().Deserialize(ref reader, options);
     }
     public ReadOnlyMemory<byte> ToMemory() => _data;

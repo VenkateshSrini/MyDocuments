@@ -10,6 +10,7 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 namespace StringBuilderToMemStream;
 public abstract class BaseClass
 {
@@ -90,11 +91,20 @@ public class AbstractClassFormatter<T> : IMessagePackFormatter<T>
         //var instance = Activator.CreateInstance(type, dictionary["Name"]);
         var instance = RuntimeHelpers.GetUninitializedObject(type);
 
-        foreach (var prop in type.GetProperties().Where(p => p.CanWrite))
+        foreach (var prop in type.GetProperties(BindingFlags.Public|BindingFlags.NonPublic | BindingFlags.Instance).Where(p => p.CanWrite))
         {
             if (dictionary.ContainsKey(prop.Name))
             {
-                prop.SetValue(instance, Convert.ChangeType(dictionary[prop.Name], prop.PropertyType));
+                if (prop.PropertyType == typeof(Dictionary<short, string>))
+                {
+                    var objectDictionary = dictionary[prop.Name] as Dictionary<object, object>;
+                    var shortStringDictionary = objectDictionary.ToDictionary(k => Convert.ToInt16(k.Key), v => v.Value.ToString());
+                    prop.SetValue(instance, shortStringDictionary);
+                }
+                else
+                {
+                    prop.SetValue(instance, Convert.ChangeType(dictionary[prop.Name], prop.PropertyType));
+                }
             }
         }
         foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
@@ -116,13 +126,16 @@ public class AbstractClassFormatter<T> : IMessagePackFormatter<T>
             ["Type"] = value.GetType().AssemblyQualifiedName
         };
 
-        foreach (var prop in value.GetType().GetProperties())
+        foreach (var prop in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
         {
             dictionary[prop.Name] = prop.GetValue(value);
         }
-       
+        foreach (var field in value.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+        {
+            dictionary[field.Name] = field.GetValue(value);
+        }
 
-        options.Resolver.GetFormatterWithVerify<Dictionary<string, object>>().Serialize(ref writer, dictionary, options);
+            options.Resolver.GetFormatterWithVerify<Dictionary<string, object>>().Serialize(ref writer, dictionary, options);
     }
 
    
